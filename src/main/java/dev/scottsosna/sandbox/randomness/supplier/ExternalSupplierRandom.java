@@ -140,7 +140,7 @@ public class ExternalSupplierRandom extends Random {
     }
 
     /**
-     * Using the requested supplier, create a stream of llongs to convert into binary and write
+     * Using the requested supplier, create a stream of longs to convert into binary and write
      * to the output stream, usually for statistical evaluation.
      * @param os output stream to which the binary data is written
      * @param longsCount how many longs to generate
