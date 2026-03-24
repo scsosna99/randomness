@@ -116,7 +116,6 @@ public class ExternalSupplierRandom extends Random {
             Process p = dumpSupplier.startExternalProcess();
 
             byte[] data = new byte[128 * 1024];
-            long byteCount = (long) longsCount * Long.BYTES;
             long totalRead = 0;
             try (InputStream is = p.getInputStream();
                  BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os))) {
@@ -124,7 +123,7 @@ public class ExternalSupplierRandom extends Random {
                 //  Read data from the supplier's external process, converting each byte to a binary
                 //  string and dumping to output stream.  For whatever reason, it's faster to
                 //  convert/write bytes individually than bulk writing of bytes to output stream.
-                while (totalRead < byteCount) {
+                while (totalRead < longsCount) {
                     int readCount = is.read(data, 0, (int) Math.min(data.length, (longsCount - totalRead)));
                     for (int i = 0; i < readCount; i++) {
                         bw.write(byteIntoBinaryTable[data[i] & 0xFF].toCharArray());
@@ -135,6 +134,7 @@ public class ExternalSupplierRandom extends Random {
         } catch (Exception e) {
             throw new RuntimeException("Unable to dump data from " + dumpSupplier.supplierType(), e);
         } finally {
+            System.out.printf("%s Stopping supplier '%s for dump.'\n", Instant.now(), dumpSupplier.supplierType());
             this.supplier.stop();
         }
     }
