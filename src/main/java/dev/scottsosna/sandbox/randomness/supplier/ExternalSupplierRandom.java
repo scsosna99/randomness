@@ -11,6 +11,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Random;
 
@@ -201,6 +203,14 @@ public class ExternalSupplierRandom extends Random {
     @Scheduled(initialDelay=2000L)
     private void doInit() {
         initialize(supplierType);
+
+        //  Uncomment this code and add an appropriate path if you wish to dump a large binary file for statistical analysys.  The
+        //  API call will only work for smaller dumps which complete before the API call times out.
+//        try (OutputStream os = Files.newOutputStream(Paths.get("/put/an/appropriate/path/here/supplier.bin"))) {
+//            dump("radio", os, 65536000);
+//        } catch (Exception e) {
+//            System.out.println ("Unable to dump data from " + supplierType + ": " + e.getMessage());
+//        }
     }
 
     /**
