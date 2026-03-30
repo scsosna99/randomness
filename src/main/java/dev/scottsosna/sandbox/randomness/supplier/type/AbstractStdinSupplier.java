@@ -117,6 +117,7 @@ public abstract class AbstractStdinSupplier extends AbstractRandomSupplier {
     private void readData() {
 
         InputStream is = externalProcess.getInputStream();
+        byte[] temp = new byte[chunkSize];
         try {
 
             //  Minimize any potential waits by reading 1K at a time.
@@ -125,22 +126,20 @@ public abstract class AbstractStdinSupplier extends AbstractRandomSupplier {
             //  Keep reading data until the flag is turned off/disabled/whatever.
             while (supplierIsRunning.get()) {
 
-                //  Determine what remains in circular buffer to fill in on this iteration.
-                int remaining = circular.length - writePos;
+                //  Read chunk of bytes from stdin.
+                int read = is.read(temp, 0, chunkSize);
+                if (read == -1) break;
 
-                //  Must not exceed end of circular buffer, so calculate room remaining and determine
-                //  whether it's a normal read or one that needs to loop us back to beginning.
-                if (chunkSize < remaining) {
-                    int read = is.read(circular, writePos, chunkSize);
-                    if (read == -1) break;
-                    writePos += read;
-                } else {
-                    //  Full chunk read extends past the end of the circular buffer, read enough to complete the
-                    //  buffer and then loop back to the beginning of the buffer for the next read.
-                    int read = is.read(circular, writePos, remaining);
-                    if (read == -1) break;
-                    writePos = 0;
-                    setReady(true);
+                //  XOR the data into the circular buffer.
+                for (int index = 0; index < read; index++) {
+                    //  May need to wrap around to beginning of buffer.
+                    if (writePos >= circular.length) {
+                        writePos = 0;
+                        setReady(true);
+                    }
+
+                    //  XOR the read data with whatever is already in circular buffer
+                    circular[writePos++] ^= temp[index];
                 }
             }
         } catch (Exception e) {

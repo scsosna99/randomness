@@ -118,17 +118,21 @@ public class ExternalSupplierRandom extends Random {
             Process p = dumpSupplier.startExternalProcess();
 
             byte[] data = new byte[128 * 1024];
+            byte[] temp = new byte[128 * 1024];
             long totalRead = 0;
             try (InputStream is = p.getInputStream();
                  BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os))) {
+
+                //  To emulate XOR'ing used for supplier's circular buffer, read an initial data buffer.
+                is.read(data, 0, 128 * 1024);
 
                 //  Read data from the supplier's external process, converting each byte to a binary
                 //  string and dumping to output stream.  For whatever reason, it's faster to
                 //  convert/write bytes individually than bulk writing of bytes to output stream.
                 while (totalRead < longsCount) {
-                    int readCount = is.read(data, 0, (int) Math.min(data.length, (longsCount - totalRead)));
+                    int readCount = is.read(temp, 0, (int) Math.min(data.length, (longsCount - totalRead) * Long.BYTES));
                     for (int i = 0; i < readCount; i++) {
-                        bw.write(byteIntoBinaryTable[data[i] & 0xFF].toCharArray());
+                        bw.write(byteIntoBinaryTable[(data[i] ^ temp[i]) & 0xFF].toCharArray());
                     }
                     totalRead += readCount;
                 }
@@ -203,7 +207,6 @@ public class ExternalSupplierRandom extends Random {
     @Scheduled(initialDelay=2000L)
     private void doInit() {
         initialize(supplierType);
-
         //  Uncomment this code and add an appropriate path if you wish to dump a large binary file for statistical analysys.  The
         //  API call will only work for smaller dumps which complete before the API call times out.
 //        try (OutputStream os = Files.newOutputStream(Paths.get("/put/an/appropriate/path/here/supplier.bin"))) {
